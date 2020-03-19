@@ -5,30 +5,46 @@
 // Complete the parseString function below.
 - (NSArray <NSString*>*)parseString:(NSString*)string {
     
-    NSString *searchText = string;
-
-    NSError *error = NULL;
+    NSMutableArray *final = [[NSMutableArray alloc] init];
     
-    NSArray *pattern = @[@"\\<(.*?)\\>",@"\\[(.*?)\\]",@"\\((.*?)\\)",@"\\(\\[(.*?)\\]\\)"];
+    unichar startBrackets[] = { '<', '(', '[' };
+    unichar endBrackets[] = { '>', ')', ']' };
     
-    NSMutableArray *matches = [[NSMutableArray alloc] init];
+    NSUInteger strLength = string.length;
     
-    for (int i = 0; i<pattern.count; i++) {
-        
-        NSRegularExpression *regex = [NSRegularExpression regularExpressionWithPattern:pattern[i]
-                                                            options:NSRegularExpressionCaseInsensitive
-                                                            error:&error];
-        
-        NSArray *myArray = [regex matchesInString:searchText options:0 range:NSMakeRange(0, [searchText length])];
-
-        for (NSTextCheckingResult *match in myArray) {
-             NSRange matchRange = [match rangeAtIndex:1];
-             [matches addObject:[searchText substringWithRange:matchRange]];
-             NSLog(@"matches %@", [matches lastObject]);
+    unichar buffer[strLength + 1];
+    
+    [string getCharacters:buffer range:NSMakeRange(0, strLength)];
+    
+    NSMutableOrderedSet *results = [NSMutableOrderedSet orderedSet];
+    
+    NSInteger depth = 0;
+    
+    for (int string = 0; string < strLength; string++){
+        for(int bracket = 0; bracket < 3; bracket++){
+            if (buffer[string] == startBrackets[bracket]){
+                for (int i = string + 1; i < strLength ; i++) {
+                    if (buffer[i] == startBrackets[bracket]) {
+                        depth++; continue;
+                    }
+                    if (buffer[i] == endBrackets[bracket] && depth != 0) {
+                        depth--; continue;
+                    }
+                    if (buffer[i] == endBrackets[bracket] && depth == 0) {
+                        [results addObject:[NSValue valueWithRange:NSMakeRange(string + 1, i - string - 1)]]; break;
+                        }
+                    }
+                }
+            }
         }
-        
+
+    for (NSUInteger i = 0; i < [results count]; i++) {
+        NSValue *value = [results objectAtIndex:i];
+        NSRange range = [value rangeValue];
+        NSString *subString = [string substringWithRange:range];
+        [final addObject:subString];
     }
-    return matches;
+    return final;
 }
 
 @end
